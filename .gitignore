@@ -1,2 +1,3 @@
-data/
+raw_data/nz-record-level-data-4M-records.csv
 trends/
+.Rproj.user/
