@@ -1,7 +1,5 @@
-# nzd is SK data
-# nzda is SK age data distribution
-# und is UN data distribution
-# sk_age is SK data age distribution
+# nzda is the age data distribution
+# und is NZ populaton data distribution
 
 und  <- read.csv("data/nz_2021_june_census.csv")
 nzda <- read.csv("nz_analysis/nzwb_age_distribution.csv")
@@ -10,7 +8,7 @@ par(mfrow = c(1, 2))
 mp <- barplot(
   nzda$count,
   ylim = c(0, 100000),
-  main = "SK data - vaccine dose by age",
+  main = "NZWB data - vaccine dose by age",
   yaxt = "n",
   xaxt = "n",
   ylab = "Vaccine doses 000's",

@@ -24,6 +24,7 @@ my %stats                 = ();
 my %pop                   = ();
 my %dates                 = ();
 my %age_groups            = ();
+my %age_groups_srcs       = ();
 my %nzwb_data             = ();
 my %nzwb_population       = ();
 my %doses_administered    = ();
@@ -68,13 +69,26 @@ sub load_deaths {
 	open my $in, '<:utf8', $deaths_by_months_file or die "missing source file : [$deaths_by_months_file]";
 	while (<$in>) {
 		chomp $_;
-		my ($year, $month, $ethnicity, $sex, $src_age_group, $count) = split ',', $_;
+		my ($year, $month, $ethnicity, $sex, $age_groups_src, $count) = split ',', $_;
 		next if $year eq 'year_reg';
 		next unless $ethnicity eq 'Total';
-		my $age_group = age_group_from_src_age_group($src_age_group);
+		my $age_group = age_group_from_age_groups_src($age_groups_src);
 		$deaths_by_months{$year}->{$month}->{$age_group} += $count;
 	}
 	close $in;
+	open my $out, '>:utf8', 'data/nz_2021_2023_deaths.csv';
+	say $out "year,month,age_group,count";
+	for my $year (sort{$a <=> $b} keys %deaths_by_months) {
+		next if $year < 2021;
+		for my $month (sort{$a <=> $b} keys %{$deaths_by_months{$year}}) {
+			for my $age_group (sort keys %{$deaths_by_months{$year}->{$month}}) {
+				my $age_groups_src = $age_groups_srcs{$age_group} // die;
+				my $count = $deaths_by_months{$year}->{$month}->{$age_group} // die;
+				say $out "$year,$month,$age_groups_src,$count";
+			}
+		}
+	}
+	close $out;
 }
 
 sub load_pop {
@@ -221,52 +235,56 @@ sub calculate_days_difference {
     return abs($days);
 }
 
-sub age_group_from_src_age_group {
-	my $src_age_group = shift;
+sub age_group_from_age_groups_src {
+	my $age_groups_src = shift;
 	my $age_group;
-	if ($src_age_group eq '00_00') {
+	if ($age_groups_src eq '00_00') {
 		$age_group = '1';
-	} elsif ($src_age_group eq '01_04') {
+	} elsif ($age_groups_src eq '01_04') {
 		$age_group = '2';
-	} elsif ($src_age_group eq '05_09') {
+	} elsif ($age_groups_src eq '05_09') {
 		$age_group = '3';
-	} elsif ($src_age_group eq '10_14') {
+	} elsif ($age_groups_src eq '10_14') {
 		$age_group = '4';
-	} elsif ($src_age_group eq '15_19') {
+	} elsif ($age_groups_src eq '15_19') {
 		$age_group = '5';
-	} elsif ($src_age_group eq '20_24') {
+	} elsif ($age_groups_src eq '20_24') {
 		$age_group = '6';
-	} elsif ($src_age_group eq '25_29') {
+	} elsif ($age_groups_src eq '25_29') {
 		$age_group = '7';
-	} elsif ($src_age_group eq '30_34') {
+	} elsif ($age_groups_src eq '30_34') {
 		$age_group = '8';
-	} elsif ($src_age_group eq '35_39') {
+	} elsif ($age_groups_src eq '35_39') {
 		$age_group = '9';
-	} elsif ($src_age_group eq '40_44') {
+	} elsif ($age_groups_src eq '40_44') {
 		$age_group = '10';
-	} elsif ($src_age_group eq '45_49') {
+	} elsif ($age_groups_src eq '45_49') {
 		$age_group = '11';
-	} elsif ($src_age_group eq '50_54') {
+	} elsif ($age_groups_src eq '50_54') {
 		$age_group = '12';
-	} elsif ($src_age_group eq '55_59') {
+	} elsif ($age_groups_src eq '55_59') {
 		$age_group = '13';
-	} elsif ($src_age_group eq '60_64') {
+	} elsif ($age_groups_src eq '60_64') {
 		$age_group = '14';
-	} elsif ($src_age_group eq '65_69') {
+	} elsif ($age_groups_src eq '65_69') {
 		$age_group = '15';
-	} elsif ($src_age_group eq '70_74') {
+	} elsif ($age_groups_src eq '70_74') {
 		$age_group = '16';
-	} elsif ($src_age_group eq '75_79') {
+	} elsif ($age_groups_src eq '75_79') {
 		$age_group = '17';
-	} elsif ($src_age_group eq '80_84') {
+	} elsif ($age_groups_src eq '80_84') {
 		$age_group = '18';
-	} elsif ($src_age_group eq '85_89') {
+	} elsif ($age_groups_src eq '85_89') {
 		$age_group = '19';
-	} elsif ($src_age_group eq '90_94' || $src_age_group eq '95_') {
+	} elsif ($age_groups_src eq '90_94' || $age_groups_src eq '95_') {
 		$age_group = '20';
 	} else {
-		die "src_age_group : $src_age_group";
+		die "age_groups_src : $age_groups_src";
 	}
+	if ($age_groups_src eq '90_94' || $age_groups_src eq '95_') {
+		$age_groups_src = '90_';
+	}
+	$age_groups_srcs{$age_group} = $age_groups_src;
 	return $age_group;
 }
 
