@@ -3,24 +3,12 @@
 # und is UN data distribution
 # sk_age is SK data age distribution
 
-nzd  <- read.csv("data/nzwb_dob_removed.csv.gz")
 und  <- read.csv("data/nz_2021_june_census.csv")
 nzda <- read.csv("nz_analysis/nzwb_age_distribution.csv")
 
-countby <- function(x, levelsvector) {
-  tapply(x, as.factor(levelsvector), length)
-}
-
-sk_age <- as.vector(
-  c(
-    countby(nzd$age, nzd$age)[1:89],
-    sum(countby(nzd$age, nzd$age)[90:110])
-  )
-)
-
 par(mfrow = c(1, 2))
 mp <- barplot(
-  sk_age,
+  nzda$count,
   ylim = c(0, 100000),
   main = "SK data - vaccine dose by age",
   yaxt = "n",
@@ -47,7 +35,7 @@ nm <- sum(und$count) / sum(nzda$count)
 mp <- barplot(
   und$count,
   ylim = c(0, 100000),
-  main = "NZ population by age (bars, NZ data) compared to NZWB data set distribution (red line)",
+  main = "NZ population by age (bars, NZ 2021 data) compared to NZWB data set distribution (red line)",
   yaxt = "n",
   xaxt = "n",
   ylab = "Population 000's",

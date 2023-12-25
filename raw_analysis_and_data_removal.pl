@@ -32,7 +32,7 @@ sub load_nz_data {
 	my $highest_dose_number = 0;
 	open my $in, '<:utf8', $nz_file or die "missing source file : [$nz_file]";
 	open my $out, '>:utf8', $nz_file_out or die "unable to create output file, make sure that [2013_2022_official_rates.pl] has been executed first.";
-	say $out "mrn,batch_id,dose_number,date_time_of_service,date_of_death,vaccine_name,age";
+	say $out "mrn,batch_id,dose_number,date_time_of_service,date_of_death,age";
 	while (<$in>) {
 		chomp $_;
 		$loaded++;
@@ -87,7 +87,7 @@ sub load_nz_data {
 		$nz_data{$mrn}->{'age'} = $age;
 		$nz_data{$mrn}->{'doses'}->{$dose_number} = $date_time_of_service;
 
-		say $out "$mrn,$batch_id,$dose_number,$date_time_of_service,$date_of_death,$vaccine_name,$age";
+		say $out "$mrn,$batch_id,$dose_number,$date_time_of_service,$date_of_death,$age";
 
 		$highest_dose_number = $dose_number if $dose_number > $highest_dose_number;
 
@@ -125,11 +125,11 @@ sub load_nz_data {
 		$nz_ages{$age}++;
 	}
 	open my $out_ages, '>:utf8', $nz_file_age;
-	say $out_ages "date,total";
+	say $out_ages "age,count";
 	for my $age (sort{$a <=> $b} keys %nz_ages) {
-		my $total = $nz_ages{$age} // die;
+		my $count = $nz_ages{$age} // die;
 		$age = '90+' if $age eq '90';
-		say $out_ages "$age,$total";
+		say $out_ages "$age,$count";
 	}
 	close $out_ages;
 

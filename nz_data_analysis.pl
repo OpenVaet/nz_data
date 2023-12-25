@@ -109,8 +109,8 @@ sub load_pop {
 				my ($age_group, $age_group_name) = age_group_5_from_age($age);
 				$pop{$year}->{$age_group} += $value;
 				if ($year eq 2021) {
-					$age = '90' if $age > 90;
-					$population_2021_by_age{$age} = $value;
+					$age = '90' if $age >= 90;
+					$population_2021_by_age{$age} += $value;
 				}
 			}
 		}
@@ -121,8 +121,9 @@ sub load_pop {
 	open my $out, '>:utf8', 'data/nz_2021_june_census.csv';
 	say $out 'age,count';
 	for my $age (sort{$a <=> $b} keys %population_2021_by_age) {
+		next if $age == 0;
 		my $count = $population_2021_by_age{$age} // die;
-		$age = '90+' if $age > 90;
+		$age = '90+' if $age eq '90';
 		say $out "$age,$count";
 	}
 	close $out;
@@ -140,7 +141,7 @@ sub load_nzwb_data {
 			$cpt = 0;
 			STDOUT->printflush("\rLoading NZWB data ... [$loaded] rows loaded");
 		}
-		my ($mrn, $batch_id, $dose_number, $date_time_of_service, $date_of_death, $vaccine_name, $age) = split ',', $_;
+		my ($mrn, $batch_id, $dose_number, $date_time_of_service, $date_of_death, $age) = split ',', $_;
 		next if $mrn eq 'mrn';
 		my $died = 0;
 		if ($date_of_death) {
