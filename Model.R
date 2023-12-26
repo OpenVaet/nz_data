@@ -28,7 +28,9 @@ names(death_dates)[2] <- "date_of_death"
 print(death_dates)
 
 # Minimum age for each person
+min_age <- aggregate(age ~ mrn, data = nzd, FUN = min)
 min_age <- merge(min_dates[, "mrn", drop = FALSE], min_age, by = "mrn")
+print(min_age)
 
 # Defines 'right' function
 right = function (string, char) {
