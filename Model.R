@@ -158,9 +158,6 @@ countby<- function (x, levelsvector) {
   tapply(x, as.factor(levelsvector), length)
 }
 
-# Full date range barplot
-barplot(aggregate(mortality ~ week, data = temp, FUN = sum)$mortality)
-
 # Restricted date range barplot excluding last 5 weeks
 barplot(aggregate(mortality ~ week, data = temp, FUN = sum)$mortality,
   main = "Expected vs Actual deaths for the NZ vaccine cohort"
