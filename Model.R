@@ -152,43 +152,36 @@ print(mort_by_date)
 temp <- data.frame(mort_by_date, as.Date("2021-04-07") + seq(1, 906, 1), 0)
 colnames(temp) <- c("mortality", "date", "week")
 temp$week <- as.integer((temp$date - as.Date("2021-04-07")) / 7)
-write.csv(temp,"temp")
+temp <- temp[temp$week <= 125, ]
+write.csv(temp,"temp.csv")
+# print(temp)
 
 countby<- function (x, levelsvector) {
   tapply(x, as.factor(levelsvector), length)
 }
 
-# Restricted date range barplot excluding last 5 weeks
-barplot(aggregate(mortality ~ week, data = temp, FUN = sum)$mortality,
-  main = "Expected vs Actual deaths for the NZ vaccine cohort"
-)
+colnames(death_dates)<-c("mrn","date","week")
+death_dates$week<-as.integer(as.numeric(death_dates$date-as.Date("2021-04-07"))/7)
+##full date range barplot
+#barplot(aggregate(mortality~week, data=temp, FUN=sum)$mortality)
+#barplot(countby(death_dates$week,death_dates$week),col="red",add=TRUE)
 
-death_dates <- data.frame(death_dates, 0)
-colnames(death_dates) <- c("mrn", "date", "week")
-death_dates$week <- as.integer(as.numeric(death_dates$date - as.Date("2021-04-07")) / 7)
+##restricted date range barplot excluding last 5 weeks
+barplot(as.integer(aggregate(mortality~week, data=temp, FUN=sum)$mortality+0.5)[1:125],main="Expected vs Actual deaths for the NZ vaccine cohort")
+barplot(countby(death_dates$week,death_dates$week)[1:125],col="red",add=TRUE)
 
-barplot(
-  countby(death_dates$week, death_dates$week)[1:130],
-  col = "red",
-  add = TRUE
-)
-
-kst <- as.data.frame(matrix(ncol = 3, nrow = 5))
-colnames(kst) <- c("pc.missing", "ks.test", "t.test")
-kst[1:5, ] <- seq(12, 16, 1)
+kst<-as.data.frame(matrix(ncol=3,nrow=5))
+colnames(kst)<-c("pc.missing","ks.test","t.test")
+kst[1:5,]<-seq(12,16,1)
 
 for (ct in 1:5) {
-  kst[ct, 2] <- ks.test(
-    as.integer(aggregate(mortality ~ week, data = temp, FUN = sum)$mortality + 0.5)[1:130],
-    (1.11 + ct / 100) * countby(death_dates$week, death_dates$week)[1:130]
-  )$p.value
+kst[ct,2]<- (ks.test(as.integer(aggregate(mortality~week, data=temp, FUN=sum)$mortality+0.5)[1:125],(1.11+ct/100)*countby(death_dates$week,death_dates$week)[1:125])$p.value)
 }
 
 for (ct in 1:5) {
-  kst[ct, 3] <- t.test(
-    as.integer(aggregate(mortality ~ week, data = temp, FUN = sum)$mortality + 0.5)[1:130],
-    (1.11 + ct / 100) * countby(death_dates$week, death_dates$week)[1:130]
-  )$p.value
+kst[ct,3] <-(t.test(as.integer(aggregate(mortality~week, data=temp, FUN=sum)$mortality+0.5)[1:125],(1.11+ct/100)*countby(death_dates$week,death_dates$week)[1:125])$p.value)
 }
 
-print(kst)
+kst
+
+
