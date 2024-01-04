@@ -19,7 +19,7 @@ ggplot(data, aes(x = week_num)) +
   geom_line(aes(y = cases_administered * scaling_factor, group = 2), colour = "red") +
   scale_y_continuous(
     "Deaths",
-    sec.axis = sec_axis(~./scaling_factor, name = "Doses Administered")
+    sec.axis = sec_axis(~./scaling_factor, name = "Covid Cases")
   ) +
   scale_x_continuous(
     "Week Number",

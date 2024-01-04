@@ -3,7 +3,7 @@
 
 und  <- read.csv("data/nz_2021_june_census.csv")
 print(und)
-nzd  <- read.csv("data/nzwb_dob_removed.csv.gz")
+nzd  <- read.csv("data/nzwb_dob_removed_50_plus.csv.gz")
 
 ##==========================================
 
@@ -153,6 +153,7 @@ print(mort_by_date)
 
 
 temp <- data.frame(mort_by_date, as.Date("2021-04-07") + seq(1, 906, 1), 0)
+colnames(temp) <- c("mortality", "date", "week")
 temp$week <- as.integer((temp$date - as.Date("2021-04-07")) / 7)
 temp <- temp[temp$week <= 125, ]
 write.csv(temp,"temp.csv")
@@ -162,7 +163,7 @@ countby<- function (x, levelsvector) {
   tapply(x, as.factor(levelsvector), length)
 }
 
-colnames(death_dates)<-c("mrn","date","week")
+print(death_dates)
 death_dates$week<-as.integer(as.numeric(death_dates$date-as.Date("2021-04-07"))/7)
 ##full date range barplot
 #barplot(aggregate(mortality~week, data=temp, FUN=sum)$mortality)
