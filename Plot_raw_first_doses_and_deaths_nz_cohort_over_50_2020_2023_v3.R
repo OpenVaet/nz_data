@@ -40,3 +40,4 @@ ggplot(data, aes(x = week_num)) +
     legend.text = element_text(size = 10),
     legend.title = element_text(size = 12)
   )
+
