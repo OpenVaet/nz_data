@@ -22,16 +22,37 @@ use lib "$FindBin::Bin/../../lib";
 
 my %age_groups_srcs       = ();
 my %deaths_by_months      = ();
-my $cutoff_compdate       = 20230930;
+my %deaths                = ();
 
 # Deaths data from https://www.stats.govt.nz/assets/Uploads/Births-and-deaths/Births-and-deaths-Year-ended-September-2023/Download-data/Monthly-death-registrations-by-ethnicity-age-sex-Jan2010-Sep2023.xlsx
 my $deaths_by_months_file = 'raw_data/Monthly_death_registrations_by_ethnicity_age_sex_Jan2010_Sep2023.csv';
+my $deaths_file           = 'raw_data/VSD349204_20240106_103532_75.csv';
 
 # Load deaths & population.
+load_monthly_deaths();
 load_deaths();
 
-sub load_deaths {
-	say "Loading deaths ...";
+p%deaths_by_months;
+p%deaths;
+
+open my $out, '>:utf8', 'data/over_under_70_deaths_dataset_compare.csv';
+say $out "year,age_group,count_monthly,count_yearly";
+for my $year (sort{$a <=> $b} keys %deaths_by_months) {
+	# next if $year < 2021;
+	for my $age_group (sort keys %{$deaths_by_months{$year}}) {
+		my $count_monthly = $deaths_by_months{$year}->{$age_group} // die;
+		my $count_yearly  = $deaths{$year}->{$age_group} // next;
+		if ($age_group == 1) {
+			$age_group = 'Under 70'
+		} else {
+			$age_group = '70+'
+		}
+		say $out "$year,$age_group,$count_monthly,$count_yearly";
+	}
+}
+close $out;
+
+sub load_monthly_deaths {
 	open my $in, '<:utf8', $deaths_by_months_file or die "missing source file : [$deaths_by_months_file]";
 	while (<$in>) {
 		chomp $_;
@@ -39,26 +60,55 @@ sub load_deaths {
 		next if $year eq 'year_reg';
 		next unless $ethnicity eq 'Total';
 		my $age_group = age_group_from_age_groups_src($age_groups_src);
-		$deaths_by_months{$year}->{$month}->{$age_group} += $count;
+		$deaths_by_months{$year}->{$age_group} += $count;
 	}
 	close $in;
-	open my $out, '>:utf8', 'data/over_under_70_deaths.csv';
-	say $out "year,month,age_group,count";
-	for my $year (sort{$a <=> $b} keys %deaths_by_months) {
-		# next if $year < 2021;
-		for my $month (sort{$a <=> $b} keys %{$deaths_by_months{$year}}) {
-			for my $age_group (sort keys %{$deaths_by_months{$year}->{$month}}) {
-				my $count = $deaths_by_months{$year}->{$month}->{$age_group} // die;
-				if ($age_group == 1) {
-					$age_group = 'Under 70'
+}
+
+sub load_deaths {
+	my %headers = ();
+	open my $in, '<:utf8', $deaths_file;
+	while (<$in>) {
+		chomp $_;
+		$_ =~ s/\"//g;
+		my ($year) = split ',', $_;
+		next unless defined $year;
+		if ($year eq ' ') {
+			my @headers = split ",", $_;
+			for my $header_ref (1 .. scalar @headers - 1) {
+				my $header = $headers[$header_ref] // die;
+				$headers{$header_ref} = $header;
+			}
+		} else {
+			next unless keys %headers;
+			next unless looks_like_number($year);
+			my %values = ();
+			my @values = split ',', $_;
+			for my $value_ref (1 .. scalar @values - 1) {
+				my $value  = $values[$value_ref]  // die;
+				my $header = $headers{$value_ref} // die;
+				$header    = strip_age($header);
+				if ($header <= 69) {
+					$deaths{$year}->{'1'} += $value;
 				} else {
-					$age_group = '70+'
+					$deaths{$year}->{'2'} += $value;
 				}
-				say $out "$year,$month,$age_group,$count";
 			}
 		}
 	}
-	close $out;
+	close $in;
+}
+
+sub strip_age {
+	my $header = shift;
+	$header =~ s/Less than 1 year/0/;
+	$header =~ s/ years and over//;
+	$header =~ s/ years//;
+	$header =~ s/ year//;
+	$header =~ s/ Years and Over//;
+	$header =~ s/ Years//;
+	$header =~ s/ Year//;
+	return $header;
 }
 
 sub age_group_from_age_groups_src {

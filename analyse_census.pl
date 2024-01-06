@@ -21,24 +21,20 @@ use FindBin;
 use lib "$FindBin::Bin/../../lib";
 
 # Group: Population Estimates - DPE
-# Table: Estimated Resident Population by Age and Sex (1991+) (Annual-Sep)
-# https://infoshare.stats.govt.nz/ViewTable.aspx?pxID=dee85724-b752-40d4-8201-1f2a3623f4cd
-my $pop_esti_file = 'raw_data/DPE403904_20240106_043738_97.csv';
+# Table: Estimated Resident Population by Age and Sex (1991+) (Annual-Dec)
+my $pop_esti_file = 'raw_data/DPE403905_20240106_104639_36.csv';
 
 # Group: Births - VSB
-# Table: Live births by age of mother (Annual-Sep)
-# https://infoshare.stats.govt.nz/ViewTable.aspx?pxID=fcbe5dd9-d7bc-43cc-83e6-100a2ec46c24
-my $births_file    = 'raw_data/VSB355803_20240106_044138_29.csv';
+# Table: Live births by age of mother (Annual-Dec)
+my $births_file    = 'raw_data/VSB355804_20240106_104105_54.csv';
 
 # Group: Deaths - VSD
-# Table: Deaths by age and sex (Annual-Sep)
-# https://infoshare.stats.govt.nz/ViewTable.aspx?pxID=d7f5170d-b233-406e-935e-bf0cd23dd09c
-my $deaths_file    = 'raw_data/VSD349203_20240106_044840_86.csv';
+# Table: Deaths by age and sex (Annual-Dec)
+my $deaths_file    = 'raw_data/VSD349204_20240106_103532_75.csv';
 
 # Group: International Travel and Migration - ITM
-# Table: Permanent & long-term migration key series (Annual-Sep)
-# https://infoshare.stats.govt.nz/ViewTable.aspx?pxID=1442953e-597e-47a7-b409-de82c8717ef4
-my $immi_file      = 'raw_data/ITM552111_20240106_070445_77.csv';
+# Table: Estimated migration by direction, age group and sex, 12/16-month rule (Annual-Dec)
+my $immi_file      = 'raw_data/ITM552114_20240106_105644_18.csv';
 
 my %deaths   = ();
 my %births   = ();
@@ -50,9 +46,9 @@ load_births();
 load_pop_esti();
 load_immi();
 
-# p%deaths;
+p%deaths;
 # p%births;
-p%immi;
+# p%immi;
 
 sub load_deaths {
 	my %headers = ();
