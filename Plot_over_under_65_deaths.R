@@ -1,7 +1,7 @@
 library(ggplot2)
 library(dplyr)
-data <- read.csv("data/over_under_70_deaths.csv")
-data$age_group <- factor(data$age_group, levels = c("70+", "Under 70"))
+data <- read.csv("data/over_under_65_deaths.csv")
+data$age_group <- factor(data$age_group, levels = c("65+", "Under 65"))
 data <- data %>%
   arrange(year, month, age_group) %>%
   group_by(year, month) %>%
@@ -11,9 +11,9 @@ breaks <- data$year_month[seq(1, length(data$year_month), by = 12)]
 ggplot(data, aes(x = year_month, y = count, fill = age_group)) +
   geom_col(position = "dodge") +
   scale_x_discrete(breaks = breaks) +
-  scale_fill_manual(values = c("70+" = "red", "Under 70" = "blue")) +
+  scale_fill_manual(values = c("65+" = "red", "Under 65" = "blue")) +
   labs(
-    title = "Deaths under age 70 & 70+ New-Zealand",
+    title = "Deaths under age 65 & 65+ New-Zealand",
     x = "Year-Month",
     y = "Total Count",
     fill = "Age Group"

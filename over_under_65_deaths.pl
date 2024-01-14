@@ -42,7 +42,7 @@ sub load_deaths {
 		$deaths_by_months{$year}->{$month}->{$age_group} += $count;
 	}
 	close $in;
-	open my $out, '>:utf8', 'data/over_under_70_deaths.csv';
+	open my $out, '>:utf8', 'data/over_under_65_deaths.csv';
 	say $out "year,month,age_group,count";
 	for my $year (sort{$a <=> $b} keys %deaths_by_months) {
 		# next if $year < 2021;
@@ -50,9 +50,9 @@ sub load_deaths {
 			for my $age_group (sort keys %{$deaths_by_months{$year}->{$month}}) {
 				my $count = $deaths_by_months{$year}->{$month}->{$age_group} // die;
 				if ($age_group == 1) {
-					$age_group = 'Under 70'
+					$age_group = 'Under 65'
 				} else {
-					$age_group = '70+'
+					$age_group = '65+'
 				}
 				say $out "$year,$month,$age_group,$count";
 			}
@@ -93,7 +93,7 @@ sub age_group_from_age_groups_src {
 	} elsif ($age_groups_src eq '60_64') {
 		$age_group = '1';
 	} elsif ($age_groups_src eq '65_69') {
-		$age_group = '1';
+		$age_group = '2';
 	} elsif ($age_groups_src eq '70_74') {
 		$age_group = '2';
 	} elsif ($age_groups_src eq '75_79') {
