@@ -52,34 +52,6 @@ fetch_dates_hours();
 # Recreating the archive.
 print_archive();
 
-sub print_archive {
-    my $former_total = 0;
-    open my $out, '>:utf8', 'data/nz_doses_administered_from_archive.csv';
-    for my $file (glob "archive_org_data/json/*") {
-        my ($compdatetime) = $file =~ /json\/(.*)\.json$/;
-        my ($year, $month, $day) = $compdatetime =~ /^(....)(..)(..).*/;
-        die unless $compdatetime;
-        die "file : $file" unless length $compdatetime == 14 || length $compdatetime == 13;
-        my $archive_url = "https://web.archive.org/web/$compdatetime/https://health.govt.nz/our-work/diseases-and-conditions/covid-19-novel-coronavirus/covid-19-data-and-statistics/covid-19-vaccine-data";
-        my $json = json_from_file($file);
-        my $current_total = %$json{'Total'}->{'First dose administered'} // die;
-        $current_total =~ s/,//g;
-        if (!$former_total || ($former_total != $current_total)) {
-            $former_total = $current_total;
-            for my $age_group (sort keys %$json) {
-                my $first_doses = %$json{$age_group}->{'First dose administered'} // die;
-                my $second_doses = %$json{$age_group}->{'Second dose administered'} // %$json{$age_group}->{'Fully vaccinated'} // die;
-                $first_doses =~ s/,//g;
-                $second_doses =~ s/,//g;
-                say $out "$archive_url,$year-$month-$day,$age_group,$first_doses,$second_doses";
-            }
-        }
-        # p$json;
-        # die;
-    }
-    close $out;
-}
-
 sub fetch_years {
 
     # Setting headers & URL.
@@ -445,4 +417,33 @@ sub json_from_file {
     } else {
         return {};
     }
+}
+
+sub print_archive {
+    my $former_total = 0;
+    open my $out, '>:utf8', 'data/nz_doses_administered_from_archive.csv';
+    say $out "archive_url,archive_date,age_group,first_doses,second_doses";
+    for my $file (glob "archive_org_data/json/*") {
+        my ($compdatetime) = $file =~ /json\/(.*)\.json$/;
+        my ($year, $month, $day) = $compdatetime =~ /^(....)(..)(..).*/;
+        die unless $compdatetime;
+        die "file : $file" unless length $compdatetime == 14 || length $compdatetime == 13;
+        my $archive_url = "https://web.archive.org/web/$compdatetime/$target_url";
+        my $json = json_from_file($file);
+        my $current_total = %$json{'Total'}->{'First dose administered'} // die;
+        $current_total =~ s/,//g;
+        if (!$former_total || ($former_total != $current_total)) {
+            $former_total = $current_total;
+            for my $age_group (sort keys %$json) {
+                my $first_doses = %$json{$age_group}->{'First dose administered'} // die;
+                my $second_doses = %$json{$age_group}->{'Second dose administered'} // %$json{$age_group}->{'Fully vaccinated'} // die;
+                $first_doses =~ s/,//g;
+                $second_doses =~ s/,//g;
+                say $out "$archive_url,$year-$month-$day,$age_group,$first_doses,$second_doses";
+            }
+        }
+        # p$json;
+        # die;
+    }
+    close $out;
 }
