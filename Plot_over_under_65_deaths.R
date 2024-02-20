@@ -13,7 +13,7 @@ ggplot(data, aes(x = year_month, y = count, fill = age_group)) +
   scale_x_discrete(breaks = breaks) +
   scale_fill_manual(values = c("65+" = "red", "Under 65" = "blue")) +
   labs(
-    title = "Deaths under age 65 & 65+ New-Zealand",
+    title = "New-Zealand - Deaths under age 65 & 65+",
     x = "Year-Month",
     y = "Total Count",
     fill = "Age Group"

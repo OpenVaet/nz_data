@@ -26,26 +26,12 @@ my %pop_esti              = ();
 
 # Deaths data from https://www.stats.govt.nz/assets/Uploads/Births-and-deaths/Births-and-deaths-Year-ended-September-2023/Download-data/Monthly-death-registrations-by-ethnicity-age-sex-Jan2010-Sep2023.xlsx
 my $deaths_by_months_file = 'raw_data/Monthly_death_registrations_by_ethnicity_age_sex_Jan2010_Sep2023.csv';
-my $pop_esti_file         = 'raw_data/DPE403905_20240106_104639_36.csv';
+my $pop_esti_file         = 'raw_data/DPE403905_20240219_032202_8.csv';
 
 # Load deaths & population.
 load_pop_esti();
 load_deaths();
-
-open my $out, '>:utf8', 'data/deaths_and_pop_by_months_and_ages.csv';
-say $out "year,month,age_group,age_groups_src,population,deaths";
-for my $year (sort{$a <=> $b} keys %deaths_by_months) {
-	next if $year == 2023;
-	for my $month (sort{$a <=> $b} keys %{$deaths_by_months{$year}}) {
-		for my $age_group (sort{$a <=> $b} keys %{$deaths_by_months{$year}->{$month}}) {
-			my $count = $deaths_by_months{$year}->{$month}->{$age_group} // die;
-			my $population = $pop_esti{$year}->{$age_group} // die "year : $year - $age_group";
-			my $age_groups_src = $age_groups_srcs{$age_group} // die;
-			say $out "$year,$month,$age_group,$age_groups_src,$population,$count";
-		}
-	}
-}
-close $out;
+print_population_normalized();
 
 sub load_deaths {
 	say "Loading deaths ...";
@@ -62,6 +48,7 @@ sub load_deaths {
 }
 
 sub load_pop_esti {
+	say "Loading population estimates ...";
 	my %headers = ();
 	open my $in, '<:utf8', $pop_esti_file;
 	while (<$in>) {
@@ -202,4 +189,22 @@ sub age_group_5_from_age {
 		die "header : $header";
 	}
 	return $age_group;
+}
+
+sub print_population_normalized {
+	say "Printing normalized data ...";
+	open my $out, '>:utf8', 'data/deaths_and_pop_by_months_and_ages.csv';
+	say $out "year,month,age_group,age_groups_src,population,deaths";
+	for my $year (sort{$a <=> $b} keys %deaths_by_months) {
+		next if $year == 2023;
+		for my $month (sort{$a <=> $b} keys %{$deaths_by_months{$year}}) {
+			for my $age_group (sort{$a <=> $b} keys %{$deaths_by_months{$year}->{$month}}) {
+				my $count = $deaths_by_months{$year}->{$month}->{$age_group} // die;
+				my $population = $pop_esti{$year}->{$age_group} // die "year : $year - $age_group";
+				my $age_groups_src = $age_groups_srcs{$age_group} // die;
+				say $out "$year,$month,$age_group,$age_groups_src,$population,$count";
+			}
+		}
+	}
+	close $out;
 }

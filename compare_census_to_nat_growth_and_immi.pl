@@ -22,7 +22,7 @@ use lib "$FindBin::Bin/../../lib";
 
 # Group: Population Estimates - DPE
 # Table: Estimated Resident Population by Age and Sex (1991+) (Annual-Dec)
-my $pop_esti_file = 'raw_data/DPE403905_20240106_104639_36.csv';
+my $pop_esti_file  = 'raw_data/DPE403905_20240219_032202_8.csv';
 
 # Group: Births - VSB
 # Table: Live births by age of mother (Annual-Dec)
@@ -35,9 +35,6 @@ my $deaths_file    = 'raw_data/VSD349204_20240106_103532_75.csv';
 # Group: International Travel and Migration - ITM
 # Table: Estimated migration by direction, age group and sex, 12/16-month rule (Annual-Dec)
 my $immi_file      = 'raw_data/ITM552114_20240106_105644_18.csv';
-
-# 
-my $d_r_file = 'raw_data/DMM168901_20240110_095412_56.csv';
 
 my %deaths     = ();
 my %births     = ();
@@ -53,8 +50,8 @@ load_pop_esti();
 load_immi();
 
 # Output files.
-my $pop_census_file = 'data/2010_2022_dec_census_data.csv';
-my $pop_growth_file = 'data/2010_2022_dec_natural_and_immi_vs_census_data.csv';
+my $pop_census_file = 'data/2010_2023_dec_census_data.csv';
+my $pop_growth_file = 'data/2010_2023_dec_natural_and_immi_vs_census_data.csv';
 
 generate_population_totals();
 

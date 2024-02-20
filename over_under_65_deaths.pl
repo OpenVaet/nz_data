@@ -20,9 +20,7 @@ use DateTime;
 use FindBin;
 use lib "$FindBin::Bin/../../lib";
 
-my %age_groups_srcs       = ();
 my %deaths_by_months      = ();
-my $cutoff_compdate       = 20230930;
 
 # Deaths data from https://www.stats.govt.nz/assets/Uploads/Births-and-deaths/Births-and-deaths-Year-ended-September-2023/Download-data/Monthly-death-registrations-by-ethnicity-age-sex-Jan2010-Sep2023.xlsx
 my $deaths_by_months_file = 'raw_data/Monthly_death_registrations_by_ethnicity_age_sex_Jan2010_Sep2023.csv';

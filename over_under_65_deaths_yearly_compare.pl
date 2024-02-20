@@ -20,7 +20,6 @@ use DateTime;
 use FindBin;
 use lib "$FindBin::Bin/../../lib";
 
-my %age_groups_srcs       = ();
 my %deaths_by_months      = ();
 my %deaths                = ();
 
@@ -28,29 +27,15 @@ my %deaths                = ();
 my $deaths_by_months_file = 'raw_data/Monthly_death_registrations_by_ethnicity_age_sex_Jan2010_Sep2023.csv';
 my $deaths_file           = 'raw_data/VSD349204_20240106_103532_75.csv';
 
-# Load deaths & population.
+# Load deaths from monthly file including 16 rolling months visitors.
 load_monthly_deaths();
+# Loads deads from yearly reports, residents only
 load_deaths();
+# Prints summary & offset between files.
+print_yearly_summary();
 
-p%deaths_by_months;
-p%deaths;
-
-open my $out, '>:utf8', 'data/over_under_65_deaths_dataset_compare.csv';
-say $out "year,age_group,count_monthly,count_yearly";
-for my $year (sort{$a <=> $b} keys %deaths_by_months) {
-	# next if $year < 2021;
-	for my $age_group (sort keys %{$deaths_by_months{$year}}) {
-		my $count_monthly = $deaths_by_months{$year}->{$age_group} // die;
-		my $count_yearly  = $deaths{$year}->{$age_group} // next;
-		if ($age_group == 1) {
-			$age_group = 'Under 65'
-		} else {
-			$age_group = '65+'
-		}
-		say $out "$year,$age_group,$count_monthly,$count_yearly";
-	}
-}
-close $out;
+# p%deaths_by_months;
+# p%deaths;
 
 sub load_monthly_deaths {
 	open my $in, '<:utf8', $deaths_by_months_file or die "missing source file : [$deaths_by_months_file]";
@@ -158,4 +143,27 @@ sub age_group_from_age_groups_src {
 		die "age_groups_src : $age_groups_src";
 	}
 	return $age_group;
+}
+
+sub print_yearly_summary {
+	my $offset_sum = 0;
+	open my $out, '>:utf8', 'data/over_under_65_deaths_dataset_compare.csv';
+	say $out "year,age_group,count_monthly,count_yearly";
+	for my $year (sort{$a <=> $b} keys %deaths_by_months) {
+		# next if $year < 2021;
+		for my $age_group (sort keys %{$deaths_by_months{$year}}) {
+			my $count_monthly = $deaths_by_months{$year}->{$age_group} // die;
+			my $count_yearly  = $deaths{$year}->{$age_group} // next;
+			my $offset = $count_monthly - $count_yearly;
+			$offset_sum += $offset;
+			if ($age_group == 1) {
+				$age_group = 'Under 65'
+			} else {
+				$age_group = '65+'
+			}
+			say $out "$year,$age_group,$count_monthly,$count_yearly";
+		}
+	}
+	close $out;
+	say "offset_sum : $offset_sum";
 }

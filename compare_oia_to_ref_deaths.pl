@@ -23,8 +23,10 @@ use lib "$FindBin::Bin/../../lib";
 my $oia_deaths_file       = 'raw_data/25021_Data_Attachment_1.csv';                                          # from https://fyi.org.nz/request/25021-number-of-covid19-vax-deaths-by-age-band-location-and-month#incoming-96520
 my $deaths_by_months_file = 'raw_data/Monthly_death_registrations_by_ethnicity_age_sex_Jan2010_Sep2023.csv'; # from https://www.stats.govt.nz/assets/Uploads/Births-and-deaths/Births-and-deaths-Year-ended-September-2023/Download-data/Monthly-death-registrations-by-ethnicity-age-sex-Jan2010-Sep2023.xlsx
 
-my %oia_deaths       = ();
-my %deaths_by_months = ();
+my %oia_deaths            = ();
+my %deaths_by_months      = ();
+
+my $default_under_5       = 2;
 
 load_deaths();
 load_oia_deaths();
@@ -53,7 +55,7 @@ sub load_oia_deaths {
 		next if $year_month eq 'Total';
 		# say $_;
 		if ($count eq '<5') {
-			$count = 3;
+			$count = $default_under_5;
 		}
 		my ($year, $month) = split '-', $year_month;
 		if ($month < 10) {
@@ -67,8 +69,8 @@ sub load_oia_deaths {
 sub print_compare {
 	say "Printing deaths compare ...";
 	my ($oia_total, $ref_total) = (0, 0);
-	open my $out, '>:utf8', 'deaths_by_months_raw_compare.csv';
-	say $out "year,month,oia_deaths,ref_deaths,oia_total,ref_total";
+	open my $out, '>:utf8', 'data/deaths_by_months_raw_compare.csv';
+	say $out "Year Month,OIA Deaths,Reference Deaths,OIA Total,Reference Total";
 	for my $year (sort{$a <=> $b} keys %oia_deaths) {
 		for my $month (sort{$a <=> $b} keys %{$oia_deaths{$year}}) {
 			my $oia_deaths = $oia_deaths{$year}->{$month} // die;
@@ -79,5 +81,7 @@ sub print_compare {
 			say $out "$year-$month,$oia_deaths,$ref_deaths,$oia_total,$ref_total";
 		}
 	}
+	my $oia_minus_ref = $oia_total - $ref_total;
 	close $out;
+	say "oia_minus_ref : $oia_minus_ref";
 }
