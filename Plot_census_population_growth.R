@@ -3,7 +3,7 @@ library(ggplot2)
 library(scales) # For the comma function
 
 # Reads the data from census
-census_data <- read.csv("data/2010_2023_dec_census_data.csv")
+census_data <- read.csv("data/2019_2023_dec_census_data.csv")
 
 # Plots the first dataset with a thicker line, point labels, and a title
 p1 <- ggplot(census_data, aes(x = year, y = population)) +
@@ -19,7 +19,7 @@ p1 <- ggplot(census_data, aes(x = year, y = population)) +
 print(p1)
 
 # Reads the data from the second CSV file
-new_census_data <- read.csv("data/2010_2023_dec_natural_and_immi_vs_census_data.csv")
+new_census_data <- read.csv("data/2019_2023_dec_natural_and_immi_vs_census_data.csv")
 print(new_census_data)
 
 # Plots the second dataset with two lines
@@ -30,7 +30,9 @@ p2 <- ggplot(new_census_data, aes(x = year)) +
   scale_color_manual(values = c("Census Population" = "blue", "Natural Growth and Immigration Population" = "red"),
                      name = "") +
   scale_x_continuous(breaks = census_data$year) +
-  scale_y_continuous(labels = comma, limits = c(0, max(new_census_data$census.population, new_census_data$natural.growth.and.immigration.population))) +
+  scale_y_continuous(labels = comma, 
+                     limits = c(min(new_census_data$census.population, new_census_data$natural.growth.and.immigration.population), 
+                                max(new_census_data$census.population, new_census_data$natural.growth.and.immigration.population))) +
   labs(title = "New Zealand - Comparison of Census Population vs. Natural Growth and Immigration Population") +
   theme(axis.text.x = element_text(angle = 30, hjust = 1),
         legend.position = "bottom")
@@ -44,7 +46,7 @@ p3 <- ggplot(new_census_data, aes(x = year, y = offset, fill = year)) +
   geom_text(aes(label = offset), vjust = -0.3, size = 3.5) + # Add data labels above the bars
   scale_x_continuous(breaks = new_census_data$year) + # Set x-axis breaks to show integer years
   scale_y_continuous(labels = comma) + # Use full number formatting for y-axis
-  labs(title = "New Zealand - Yearly Offset in 2009 Census Population Data + Natural Growth + Net Immigration", x = "Year", y = "Offset") + # Add labels and title
+  labs(title = "New Zealand - Yearly Offset in 2009 Census Population Data - (Natural Growth + Net Immigration)", x = "Year", y = "Offset") + # Add labels and title
   theme_minimal() + # Use a minimal theme
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) # Adjust the angle and justification of x-axis labels
 

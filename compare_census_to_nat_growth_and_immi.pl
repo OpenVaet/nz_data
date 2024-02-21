@@ -51,9 +51,9 @@ load_pop_esti();
 load_immi();
 
 # Output files.
-my $pop_census_file  = 'data/2010_2023_dec_census_data.csv';
+my $pop_census_file  = 'data/2019_2023_dec_census_data.csv';
 my $recent_immi_file = 'data/2019_2023_immi_by_oia_age_groups_data.csv';
-my $pop_growth_file  = 'data/2010_2023_dec_natural_and_immi_vs_census_data.csv';
+my $pop_growth_file  = 'data/2019_2023_dec_natural_and_immi_vs_census_data.csv';
 
 generate_population_totals();
 
@@ -230,7 +230,7 @@ sub generate_population_totals {
 	open my $out, '>:utf8', $pop_census_file;
 	say $out "year,population";
 	for my $year (sort{$a <=> $b} keys %pop_esti) {
-		next if $year < 2010;
+		next if $year < 2019;
 		my $total_population = 0;
 		for my $age (sort{$a <=> $b} keys %{$pop_esti{$year}}) {
 			$total_population += $pop_esti{$year}->{$age};
@@ -244,22 +244,22 @@ sub generate_population_totals {
 
 sub generate_natural_growth {
 
-	# Fetching 2009 population total.
+	# Fetching 2018 population total.
 	say "*" x 50;
 	say "Natural growth of the population :";
-	my $total_population_2009 = 0;
-	for my $age (sort{$a <=> $b} keys %{$pop_esti{2009}}) {
-		$total_population_2009 += $pop_esti{2009}->{$age};
+	my $total_population_2018 = 0;
+	for my $age (sort{$a <=> $b} keys %{$pop_esti{2018}}) {
+		$total_population_2018 += $pop_esti{2018}->{$age};
 	}
-	say "[2009] : $total_population_2009";
+	say "[2018] : $total_population_2018";
 
 	# p%y_immi;
 
-	# For each year following 2009, adding births & immigration net growth, subtracting deaths.
-	my $natural_growth_population = $total_population_2009;
+	# For each year following 2018, adding births & immigration net growth, subtracting deaths.
+	my $natural_growth_population = $total_population_2018;
 	open my $out, '>:utf8', $pop_growth_file;
 	say $out "year,births,deaths,immigration,census population,natural growth and immigration population,offset";
-	for my $year (2010 .. 2023) {
+	for my $year (2019 .. 2023) {
 		my $births = $births{$year}   // die;
 		my $deaths = $y_deaths{$year} // die;
 		my $immi   = $y_immi{$year} // die;
