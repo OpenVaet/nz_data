@@ -102,7 +102,7 @@ sub load_git_doses {
 sub print_data_by_ages_and_age_groups {
 	open my $out_1, '>:utf8', 'data/total_first_doses_by_dates.csv';
 	say $out_1 'Date,First Doses';
-	open my $out_3, '>:utf8', 'data/first_doses_by_age_groups_and_dates';
+	open my $out_3, '>:utf8', 'data/first_doses_by_age_groups_and_dates.csv';
 	say $out_3 'Date,Age Group,First Doses';
 	for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
 		my $date = $doses_by_dates{$compdate}->{'date'} // die;
