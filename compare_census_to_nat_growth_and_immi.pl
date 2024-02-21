@@ -26,21 +26,22 @@ my $pop_esti_file  = 'raw_data/DPE403905_20240219_032202_8.csv';
 
 # Group: Births - VSB
 # Table: Live births by age of mother (Annual-Dec)
-my $births_file    = 'raw_data/VSB355804_20240106_104105_54.csv';
+my $births_file    = 'raw_data/VSB355804_20240221_104322_48.csv';
 
 # Group: Deaths - VSD
 # Table: Deaths by age and sex (Annual-Dec)
-my $deaths_file    = 'raw_data/VSD349204_20240106_103532_75.csv';
+my $deaths_file    = 'raw_data/VSD349204_20240221_105046_61.csv';
 
 # Group: International Travel and Migration - ITM
 # Table: Estimated migration by direction, age group and sex, 12/16-month rule (Annual-Dec)
-my $immi_file      = 'raw_data/ITM552114_20240106_105644_18.csv';
+my $immi_file      = 'raw_data/ITM552114_20240221_105550_31.csv';
 
 my %deaths     = ();
 my %births     = ();
 my %pop_esti   = ();
 my %immi       = ();
 my %y_immi     = ();
+my %r_immi     = ();
 my %y_pop_esti = ();
 my %y_deaths   = ();
 
@@ -50,12 +51,27 @@ load_pop_esti();
 load_immi();
 
 # Output files.
-my $pop_census_file = 'data/2010_2023_dec_census_data.csv';
-my $pop_growth_file = 'data/2010_2023_dec_natural_and_immi_vs_census_data.csv';
+my $pop_census_file  = 'data/2010_2023_dec_census_data.csv';
+my $recent_immi_file = 'data/2019_2023_immi_by_oia_age_groups_data.csv';
+my $pop_growth_file  = 'data/2010_2023_dec_natural_and_immi_vs_census_data.csv';
 
 generate_population_totals();
 
 generate_natural_growth();
+
+generate_recent_immigration();
+
+sub generate_recent_immigration {
+	open my $out, '>:utf8', $recent_immi_file;
+	say $out "Year,Age Group,Net Immigration";
+	for my $year (sort{$a <=> $b} keys %r_immi) {
+		for my $oia_age_group (sort keys %{$r_immi{$year}}) {
+			my $net_immigration = $r_immi{$year}->{$oia_age_group} // die;
+			say $out "$year,$oia_age_group,$net_immigration";
+		}
+	}
+	close $out;
+}
 
 sub load_deaths {
 	my %headers = ();
@@ -157,6 +173,7 @@ sub load_immi {
 		my $v_num = 0;
 		for my $direction (@directions) {
 			for my $age (@ages) {
+				my $oia_age_group = oia_age_group_from_age_groups_src($age);
 				my $female = $values[$v_num] // die;
 				$v_num++;
 				my $male = $values[$v_num] // die;
@@ -166,17 +183,45 @@ sub load_immi {
 				if ($direction eq 'arrivals') {
 					$y_immi{$year} += $female;
 					$y_immi{$year} += $male;
+					if ($year >= 2019 && $year <= 2023) {
+						$r_immi{$year}->{$oia_age_group} += $female;
+						$r_immi{$year}->{$oia_age_group} += $male;
+					}
 				} else {
 					unless (exists $y_immi{$year}) {
 						$y_immi{$year} = 0;
 					}
 					$y_immi{$year} -= $female;
 					$y_immi{$year} -= $male;
+					if ($year >= 2019 && $year <= 2023) {
+						$r_immi{$year}->{$oia_age_group} -= $female;
+						$r_immi{$year}->{$oia_age_group} -= $male;
+					}
 				}
 			}
 		}
 	}
 	close $in;
+}
+
+sub oia_age_group_from_age_groups_src {
+	my $age = shift;
+	$age =~ s/\+//;
+	my $oia_age_group;
+	if ($age <= 20) {
+		$oia_age_group = '0-20';
+	} elsif ($age >= 21 && $age <= 40) {
+		$oia_age_group = '21-40';
+	} elsif ($age >= 41 && $age <= 60) {
+		$oia_age_group = '41-60';
+	} elsif ($age >= 61 && $age <= 80) {
+		$oia_age_group = '61-80';
+	} elsif ($age >= 81) {
+		$oia_age_group = '81+';
+	} else {
+		die "age : $age";
+	}
+	return $oia_age_group;
 }
 
 sub generate_population_totals {
@@ -214,7 +259,7 @@ sub generate_natural_growth {
 	my $natural_growth_population = $total_population_2009;
 	open my $out, '>:utf8', $pop_growth_file;
 	say $out "year,births,deaths,immigration,census population,natural growth and immigration population,offset";
-	for my $year (2010 .. 2022) {
+	for my $year (2010 .. 2023) {
 		my $births = $births{$year}   // die;
 		my $deaths = $y_deaths{$year} // die;
 		my $immi   = $y_immi{$year} // die;

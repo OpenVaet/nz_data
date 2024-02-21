@@ -14,34 +14,41 @@ p1 <- ggplot(census_data, aes(x = year, y = population)) +
   scale_x_continuous(breaks = census_data$year) + # Set x-axis breaks to show integer years
   labs(title = "New Zealand - Population growth per December census data") + # Add chart title
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) # Adjust the angle and justification of x-axis labels
+
+# Prints the plot
 print(p1)
 
-# Read the data from the second CSV file
-new_census_data <- read.csv("data/2010_2022_dec_natural_and_immi_vs_census_data.csv")
+# Reads the data from the second CSV file
+new_census_data <- read.csv("data/2010_2023_dec_natural_and_immi_vs_census_data.csv")
 print(new_census_data)
 
-# Plot the second dataset with two lines
+# Plots the second dataset with two lines
 p2 <- ggplot(new_census_data, aes(x = year)) +
   geom_line(aes(y = census.population, colour = "Census Population"), size = 1) +
-  geom_line(aes(y = natural.growth.and.immigration.population, colour = "Natural Growth and Immigration Population"), size = 1.1) +
-  scale_color_manual(values = c("Census Population" = "blue", "Natural Growth and Immigration Population" = "red")) +
-  scale_x_continuous(breaks = census_data$year) + # Set x-axis breaks to show integer years
+  geom_line(aes(y = natural.growth.and.immigration.population, colour = "Natural Growth and Immigration Population"), size = 1.1) + 
+  geom_text(aes(y = census.population, label = census.population), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Census Population" = "blue", "Natural Growth and Immigration Population" = "red"),
+                     name = "") +
+  scale_x_continuous(breaks = census_data$year) +
   scale_y_continuous(labels = comma, limits = c(0, max(new_census_data$census.population, new_census_data$natural.growth.and.immigration.population))) +
-  labs(title = "Comparison of Census Population vs. Natural Growth and Immigration Population") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) # Adjust the angle and justification of x-axis labels
+  labs(title = "New Zealand - Comparison of Census Population vs. Natural Growth and Immigration Population") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1),
+        legend.position = "bottom")
 
-# Print the plots
+# Prints the plot
 print(p2)
 
-# Plot the yearly offset as a column chart
+# Plots the yearly offset as a column chart
 p3 <- ggplot(new_census_data, aes(x = year, y = offset, fill = year)) +
   geom_col() + # Create the column chart
   geom_text(aes(label = offset), vjust = -0.3, size = 3.5) + # Add data labels above the bars
   scale_x_continuous(breaks = new_census_data$year) + # Set x-axis breaks to show integer years
   scale_y_continuous(labels = comma) + # Use full number formatting for y-axis
-  labs(title = "Yearly Offset in 2009 Census Population Data + Natural Growth + Net Immigration", x = "Year", y = "Offset") + # Add labels and title
+  labs(title = "New Zealand - Yearly Offset in 2009 Census Population Data + Natural Growth + Net Immigration", x = "Year", y = "Offset") + # Add labels and title
   theme_minimal() + # Use a minimal theme
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) # Adjust the angle and justification of x-axis labels
 
 # Print the column chart with values
 print(p3)
+
+
