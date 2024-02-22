@@ -14,42 +14,43 @@ use Math::Round qw(nearest);
 
 # Group: Population Estimates - DPE
 # Table: Estimated Resident Population by Age and Sex (1991+) (Annual-Dec)
-my $pop_esti_file  = 'raw_data/DPE403905_20240219_032202_8.csv';
+my $pop_esti_file = 'raw_data/DPE403905_20240219_032202_8.csv';
 
 # Group: Births - VSB
 # Table: Live births by age of mother (Annual-Dec)
-my $births_file    = 'raw_data/VSB355804_20240221_104322_48.csv';
+my $births_file   = 'raw_data/VSB355804_20240221_104322_48.csv';
 
 # Group: Deaths - VSD
 # Table: Deaths by age and sex (Annual-Dec)
-my $deaths_file    = 'raw_data/VSD349204_20240221_105046_61.csv';
+my $deaths_file   = 'raw_data/VSD349204_20240221_105046_61.csv';
 
 # Group: International Travel and Migration - ITM
 # Table: Estimated migration by direction, age group and sex, 12/16-month rule (Annual-Dec)
-my $immi_file      = 'raw_data/ITM552114_20240221_105550_31.csv';
+my $immi_file     = 'raw_data/ITM552114_20240221_105550_31.csv';
 
-my %deaths     = ();
-my %births     = ();
-my %pop_esti   = ();
-my %immi       = ();
-my %y_immi     = ();
-my %r_immi     = ();
-my %y_pop_esti = ();
-my %y_deaths   = ();
+my %deaths        = ();
+my %births        = ();
+my %pop_esti      = ();
+my %immi          = ();
+my %y_immi        = ();
+my %r_immi        = ();
+my %y_pop_esti    = ();
+my %y_deaths      = ();
+
+my $target_year   = 2020;
+my $cutoff_date   = '20211231';
+my %pop_by_ages   = ();
 
 load_deaths();
 load_births();
 load_pop();
 load_immi();
 
-my $target_year = 2020;
-my %pop_by_ages = ();
-
 my %doses_by_dates = ();
 model_targeted_year_pop();
 
-open my $out_4, '>:utf8', 'data/first_doses_no_dose_by_age_and_dates';
-say $out_4 'Date,Age,First Doses,No Dose';
+open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_age_and_dates.csv';
+say $out 'Date,Age,First Doses,No Dose';
 for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
 	my $date = $doses_by_dates{$compdate}->{'date'} // die;
 	my %daily_rates_by_ages = ();
@@ -78,12 +79,11 @@ for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
 			my $population     = $pop_by_ages{$age} // die;
 			my $had_first_dose = nearest(1, $population * $first_doses_by_100 / 100);
 			my $had_no_dose    = $population - $had_first_dose;
-			say $out_4 "$date,$age,$had_first_dose,$had_no_dose";
+			say $out "$date,$age,$had_first_dose,$had_no_dose";
 		}
 	}
 }
-close $out_4;
-p%pop_by_ages;
+close $out;
 
 
 sub load_deaths {
@@ -283,10 +283,7 @@ sub model_targeted_year_pop {
 	say "offset_sum : $offset_sum";
 
 	# Now for each date and age group with dose data, calculating vaccination percents for each age among the scope (0 - 90+).
-	my $t_date = '20211231';
 	my $file   = 'data/first_doses_by_age_groups_and_dates.csv';
-	open my $out, '>:utf8', 'data/doses_split_rates_by_dates_and_ages.csv';
-	say $out 'Date,Age,Ever Vaccinated,Never Vaccinated';
 	open my $in, '<:utf8', $file or die $!;
 	while (<$in>) {
 		chomp $_;
@@ -294,12 +291,11 @@ sub model_targeted_year_pop {
 		next if $date eq 'Date';
 		my $compdate = $date;
 		$compdate =~ s/\D//g;
-		next if $compdate > $t_date;
+		next if $compdate > $cutoff_date;
 		$doses_by_dates{$compdate}->{'date'} = $date;
 		$doses_by_dates{$compdate}->{'age_groups'}->{$age_group} += $first_doses;
 	}
 	close $in;
-	close $out;
 }
 
 sub generate_population_by_age_group {
