@@ -37,7 +37,7 @@ my %r_immi        = ();
 my %y_pop_esti    = ();
 my %y_deaths      = ();
 
-my $target_year   = 2020;
+my $target_year   = 2021;
 my $cutoff_date   = '20211231';
 my %pop_by_ages   = ();
 
@@ -51,60 +51,8 @@ model_targeted_year_pop();
 
 my %doses_by_dates_and_age_groups = ();
 print_report_by_age();
-open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_oia_age_groups_and_dates.csv';
-say $out 'Date,Age Group,First Doses,No Dose';
-for my $oia_age_group (sort keys %doses_by_dates_and_age_groups) {
-	for my $compdate (sort{$a <=> $b} keys %{$doses_by_dates_and_age_groups{$oia_age_group}}) {
-		my $date = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'date'} // die;
-		my $had_first_dose = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_first_dose'} // 0;
-		my $had_no_dose = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_no_dose'} // 0;
-		say $out "$date,$oia_age_group,$had_first_dose,$had_no_dose";
-	}
-}
-close $out;
 
-sub print_report_by_age {
-	open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_age_and_dates.csv';
-	say $out 'Date,Age,First Doses,No Dose';
-	for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
-		my $date = $doses_by_dates{$compdate}->{'date'} // die;
-		my %daily_rates_by_ages = ();
-		my ($year, $month) = split '-', $date;
-		for my $age_group_name (sort keys %{$doses_by_dates{$compdate}->{'age_groups'}}) {
-			next if $age_group_name eq 'Total' || $age_group_name eq 'Various';
-			my $population  = generate_population_by_age_group($age_group_name);
-			die unless $population;
-			my $first_doses = $doses_by_dates{$compdate}->{'age_groups'}->{$age_group_name} // die;
-			my $first_doses_by_100 = nearest(0.01, $first_doses * 100 / $population);
-			$daily_rates_by_ages{$age_group_name}->{'first_doses'}        = $first_doses;
-			$daily_rates_by_ages{$age_group_name}->{'first_doses_by_100'} = $first_doses_by_100;
-		}
-
-		for my $age_group_name (sort keys %daily_rates_by_ages) {
-			my $first_doses         = $daily_rates_by_ages{$age_group_name}->{'first_doses'}        // die;
-			my $first_doses_by_100  = $daily_rates_by_ages{$age_group_name}->{'first_doses_by_100'} // die;
-			my ($from_age, $to_age) = split '-', $age_group_name;
-			if ($to_age) {
-			} else {
-				die unless $from_age =~ /\+/;
-				$from_age =~ s/\+//;
-				$to_age = 90;
-			}
-			for my $age ($from_age .. $to_age) {
-				my $population     = $pop_by_ages{$age} // die;
-				my $had_first_dose = nearest(1, $population * $first_doses_by_100 / 100);
-				my $had_no_dose    = $population - $had_first_dose;
-				my $oia_age_group  = oia_age_group_from_age_groups_src($age);
-				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'date'} = $date;
-				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'year_month'} = "$year-$month";
-				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_first_dose'} += $had_first_dose;
-				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_no_dose'} += $had_no_dose;
-				say $out "$date,$age,$had_first_dose,$had_no_dose";
-			}
-		}
-	}
-	close $out;
-}
+print_report_by_age_groups();
 
 sub oia_age_group_from_age_groups_src {
 	my $age = shift;
@@ -364,4 +312,61 @@ sub generate_population_by_age_group {
 		}
 	}
 	return $population;
+}
+
+sub print_report_by_age {
+	open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_age_and_dates.csv';
+	say $out 'Date,Age,First Doses,No Dose';
+	for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
+		my $date = $doses_by_dates{$compdate}->{'date'} // die;
+		my %daily_rates_by_ages = ();
+		my ($year, $month) = split '-', $date;
+		for my $age_group_name (sort keys %{$doses_by_dates{$compdate}->{'age_groups'}}) {
+			next if $age_group_name eq 'Total' || $age_group_name eq 'Various';
+			my $population  = generate_population_by_age_group($age_group_name);
+			die unless $population;
+			my $first_doses = $doses_by_dates{$compdate}->{'age_groups'}->{$age_group_name} // die;
+			my $first_doses_by_100 = nearest(0.01, $first_doses * 100 / $population);
+			$daily_rates_by_ages{$age_group_name}->{'first_doses'}        = $first_doses;
+			$daily_rates_by_ages{$age_group_name}->{'first_doses_by_100'} = $first_doses_by_100;
+		}
+
+		for my $age_group_name (sort keys %daily_rates_by_ages) {
+			my $first_doses         = $daily_rates_by_ages{$age_group_name}->{'first_doses'}        // die;
+			my $first_doses_by_100  = $daily_rates_by_ages{$age_group_name}->{'first_doses_by_100'} // die;
+			my ($from_age, $to_age) = split '-', $age_group_name;
+			if ($to_age) {
+			} else {
+				die unless $from_age =~ /\+/;
+				$from_age =~ s/\+//;
+				$to_age = 90;
+			}
+			for my $age ($from_age .. $to_age) {
+				my $population     = $pop_by_ages{$age} // die;
+				my $had_first_dose = nearest(1, $population * $first_doses_by_100 / 100);
+				my $had_no_dose    = $population - $had_first_dose;
+				my $oia_age_group  = oia_age_group_from_age_groups_src($age);
+				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'date'} = $date;
+				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'year_month'} = "$year-$month";
+				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_first_dose'} += $had_first_dose;
+				$doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_no_dose'} += $had_no_dose;
+				say $out "$date,$age,$had_first_dose,$had_no_dose";
+			}
+		}
+	}
+	close $out;
+}
+
+sub print_report_by_age_groups {
+	open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_oia_age_groups_and_dates.csv';
+	say $out 'Date,Age Group,First Doses,No Dose';
+	for my $oia_age_group (sort keys %doses_by_dates_and_age_groups) {
+		for my $compdate (sort{$a <=> $b} keys %{$doses_by_dates_and_age_groups{$oia_age_group}}) {
+			my $date = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'date'} // die;
+			my $had_first_dose = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_first_dose'} // 0;
+			my $had_no_dose = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'had_no_dose'} // 0;
+			say $out "$date,$oia_age_group,$had_first_dose,$had_no_dose";
+		}
+	}
+	close $out;
 }
