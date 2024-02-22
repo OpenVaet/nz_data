@@ -37,8 +37,9 @@ my %r_immi        = ();
 my %y_pop_esti    = ();
 my %y_deaths      = ();
 
-my $target_year   = 2020;
-my $cutoff_date   = '20211231';
+my $target_year   = 2022;
+my $from_date     = '20220101';
+my $cutoff_date   = '20221231';
 my %pop_by_ages   = ();
 
 load_deaths();
@@ -51,7 +52,7 @@ model_targeted_year_pop();
 
 my %doses_by_dates_and_age_groups = ();
 print_report_by_age();
-open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_oia_age_groups_and_dates.csv';
+open my $out, '>:utf8', 'data/2022_first_doses_no_dose_by_oia_age_groups_and_dates.csv';
 say $out 'Date,Age Group,First Doses,No Dose';
 for my $oia_age_group (sort keys %doses_by_dates_and_age_groups) {
 	for my $compdate (sort{$a <=> $b} keys %{$doses_by_dates_and_age_groups{$oia_age_group}}) {
@@ -64,7 +65,7 @@ for my $oia_age_group (sort keys %doses_by_dates_and_age_groups) {
 close $out;
 
 sub print_report_by_age {
-	open my $out, '>:utf8', 'data/2021_first_doses_no_dose_by_age_and_dates.csv';
+	open my $out, '>:utf8', 'data/2022_first_doses_no_dose_by_age_and_dates.csv';
 	say $out 'Date,Age,First Doses,No Dose';
 	for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
 		my $date = $doses_by_dates{$compdate}->{'date'} // die;
@@ -331,6 +332,7 @@ sub model_targeted_year_pop {
 		next if $date eq 'Date';
 		my $compdate = $date;
 		$compdate =~ s/\D//g;
+		next if $compdate < $from_date;
 		next if $compdate > $cutoff_date;
 		$doses_by_dates{$compdate}->{'date'} = $date;
 		$doses_by_dates{$compdate}->{'age_groups'}->{$age_group} += $first_doses;
