@@ -12,7 +12,6 @@ use Data::Dumper;
 use Scalar::Util qw(looks_like_number);
 use Math::Round qw(nearest);
 
-# Calculates NZ 2019 population by age group, from 2018 Census + Net Immigration + Natural growth, by age group.
 # Group: Population Estimates - DPE
 # Table: Estimated Resident Population by Age and Sex (1991+) (Annual-Dec)
 my $pop_esti_file  = 'raw_data/DPE403905_20240219_032202_8.csv';
@@ -40,41 +39,51 @@ my %y_deaths   = ();
 
 load_deaths();
 load_births();
-load_pop_esti();
+load_pop();
 load_immi();
 
-my $target_year = 2021;
+my $target_year = 2020;
 my %pop_by_ages = ();
 
+my %doses_by_dates = ();
 model_targeted_year_pop();
 
-sub generate_population_by_age_group {
-	my ($age_group_name) = @_;
-	my ($from_age, $to_age) = split '-', $age_group_name;
-	my $population = 0;
-	if ($from_age && $to_age) {
-		for my $age (sort{$a <=> $b} keys %pop_by_ages) {
-			next unless $from_age <= $age && $age <=$to_age;
-			$population += $pop_by_ages{$age};
-		}
-	} else {
-		die unless $from_age;
-		if (
-			$from_age eq '65+' ||
-			$from_age eq '90+' ||
-			$from_age eq '80+'
-		) {
-			$from_age =~ s/\+//;
-			for my $age (sort{$a <=> $b} keys %pop_by_ages) {
-				next unless $from_age <= $age;
-				$population += $pop_by_ages{$age};
-			}
+open my $out_4, '>:utf8', 'data/first_doses_no_dose_by_age_and_dates';
+say $out_4 'Date,Age,First Doses,No Dose';
+for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
+	my $date = $doses_by_dates{$compdate}->{'date'} // die;
+	my %daily_rates_by_ages = ();
+	my ($year, $month) = split '-', $date;
+	for my $age_group_name (sort keys %{$doses_by_dates{$compdate}->{'age_groups'}}) {
+		next if $age_group_name eq 'Total' || $age_group_name eq 'Various';
+		my $population  = generate_population_by_age_group($age_group_name);
+		die unless $population;
+		my $first_doses = $doses_by_dates{$compdate}->{'age_groups'}->{$age_group_name} // die;
+		my $first_doses_by_100 = nearest(0.01, $first_doses * 100 / $population);
+		$daily_rates_by_ages{$age_group_name}->{'first_doses'}        = $first_doses;
+		$daily_rates_by_ages{$age_group_name}->{'first_doses_by_100'} = $first_doses_by_100;
+	}
+
+	for my $age_group_name (sort keys %daily_rates_by_ages) {
+		my $first_doses         = $daily_rates_by_ages{$age_group_name}->{'first_doses'}        // die;
+		my $first_doses_by_100  = $daily_rates_by_ages{$age_group_name}->{'first_doses_by_100'} // die;
+		my ($from_age, $to_age) = split '-', $age_group_name;
+		if ($to_age) {
 		} else {
-			die "from_age : $from_age";
+			die unless $from_age =~ /\+/;
+			$from_age =~ s/\+//;
+			$to_age = 90;
+		}
+		for my $age ($from_age .. $to_age) {
+			my $population     = $pop_by_ages{$age} // die;
+			my $had_first_dose = nearest(1, $population * $first_doses_by_100 / 100);
+			my $had_no_dose    = $population - $had_first_dose;
+			say $out_4 "$date,$age,$had_first_dose,$had_no_dose";
 		}
 	}
-	return $population;
 }
+close $out_4;
+p%pop_by_ages;
 
 
 sub load_deaths {
@@ -135,7 +144,7 @@ sub load_births {
 	close $in;
 }
 
-sub load_pop_esti {
+sub load_pop {
 	my %headers = ();
 	open my $in, '<:utf8', $pop_esti_file;
 	while (<$in>) {
@@ -273,30 +282,50 @@ sub model_targeted_year_pop {
 	}
 	say "offset_sum : $offset_sum";
 
-	# Joy, we do, but the census aging makes no sense (see for example huge offset in births of 3691 babies - anyway..)
-	# Now for each age group with dose data, calculating vaccination percents.
-
+	# Now for each date and age group with dose data, calculating vaccination percents for each age among the scope (0 - 90+).
+	my $t_date = '20211231';
 	my $file   = 'data/first_doses_by_age_groups_and_dates.csv';
-	my $t_date = '2021-12-29';
-
-	open my $out, '>:utf8', 'data/2021-12-29_doses_rates_by_age_groups.csv';
-	say $out 'Age Group,First Doses,Population,% With First Doses';
+	open my $out, '>:utf8', 'data/doses_split_rates_by_dates_and_ages.csv';
+	say $out 'Date,Age,Ever Vaccinated,Never Vaccinated';
 	open my $in, '<:utf8', $file or die $!;
 	while (<$in>) {
 		chomp $_;
 		my ($date, $age_group, $first_doses) = split ',', $_;
 		next if $date eq 'Date';
-		next unless $date eq $t_date;
-		my $population = generate_population_by_age_group($age_group);
-		die unless $population;
-		my $first_doses_percent = nearest(0.01, $first_doses * 100 / $population);
-		say $out "$age_group,$first_doses,$population,$first_doses_percent";
-		say "age_group : $age_group";
-		say "first_doses : $first_doses";
-		say "population : $population";
-		say "first_doses_percent : $first_doses_percent";
-		# say $_;
+		my $compdate = $date;
+		$compdate =~ s/\D//g;
+		next if $compdate > $t_date;
+		$doses_by_dates{$compdate}->{'date'} = $date;
+		$doses_by_dates{$compdate}->{'age_groups'}->{$age_group} += $first_doses;
 	}
 	close $in;
 	close $out;
+}
+
+sub generate_population_by_age_group {
+	my ($age_group_name) = @_;
+	my ($from_age, $to_age) = split '-', $age_group_name;
+	my $population = 0;
+	if ($from_age && $to_age) {
+		for my $age (sort{$a <=> $b} keys %pop_by_ages) {
+			next unless $from_age <= $age && $age <=$to_age;
+			$population += $pop_by_ages{$age};
+		}
+	} else {
+		die unless $from_age;
+		if (
+			$from_age eq '65+' ||
+			$from_age eq '90+' ||
+			$from_age eq '80+'
+		) {
+			$from_age =~ s/\+//;
+			for my $age (sort{$a <=> $b} keys %pop_by_ages) {
+				next unless $from_age <= $age;
+				$population += $pop_by_ages{$age};
+			}
+		} else {
+			die "from_age : $from_age";
+		}
+	}
+	return $population;
 }
