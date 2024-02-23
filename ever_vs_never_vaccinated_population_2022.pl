@@ -242,10 +242,8 @@ sub model_targeted_year_pop {
 					my $had_first_dose_deaths  = nearest(1, $deaths * $had_first_dose_percent / 100);
 					my $had_no_dose_deaths = $deaths - $had_first_dose_deaths;
 					# say "$age - $had_first_dose_deaths vs $had_no_dose_deaths";
-					if ($age >= 5) {
-						$target_doses{$age}->{'had_first_dose'} -= $had_first_dose_deaths;
-						$target_doses{$age}->{'had_no_dose'} -= $had_no_dose_deaths;
-					}
+					$target_doses{$age}->{'had_first_dose'} -= $had_first_dose_deaths;
+					$target_doses{$age}->{'had_no_dose'} -= $had_no_dose_deaths;
 				}
 			}
 		# }
@@ -257,7 +255,7 @@ sub model_targeted_year_pop {
 			my $immi = $r_immi{$year}->{$age} // die;
 			$pop_by_ages{$age}->{'count'} += $immi;
 			die if $pop_by_ages{$age}->{'count'} < 0;
-			if ($year eq $target_year && exists $target_doses{$age} && $age >= 5) {
+			if ($year eq $target_year && exists $target_doses{$age}) {
 				$target_doses{$age}->{'had_first_dose'} += $immi;
 			}
 			# say "$age : $immi";
@@ -279,10 +277,8 @@ sub model_targeted_year_pop {
 			my $age_p_1 = $age + 1;
 			$new_pop_age{$age_p_1}->{'count'} += $pop;
 			if ($year eq $target_year && exists $target_doses{$age}) {
-				if ($age >= 5) {
-					$new_pop_age{$age_p_1}->{'had_first_dose'} += $had_first_dose;
-					$new_pop_age{$age_p_1}->{'had_no_dose'} += $had_no_dose;
-				}
+				$new_pop_age{$age_p_1}->{'had_first_dose'} += $had_first_dose;
+				$new_pop_age{$age_p_1}->{'had_no_dose'} += $had_no_dose;
 			} else {
 				$new_pop_age{$age_p_1}->{'had_no_dose'} = $pop;
 			}
@@ -404,11 +400,11 @@ sub model_targeted_year_pop {
 	# of the balance in each population (ever vs never vaxxed).
 	# die;
 	open my $out, '>:utf8', 'data/2022_first_doses_no_dose_by_age_and_dates.csv';
-	say $out 'Date,Age,First Doses,No Dose';
+	say $out 'Date,Age,Ever Vaccinated,Never Vaccinated';
 	for my $compdate (sort{$a <=> $b} keys %doses_by_dates) {
 		my $date = $doses_by_dates{$compdate}->{'date'} // die;
-		for my $age (sort{$a <=> $b} keys %{$doses_by_dates{$compdate}->{'ages'}}) {
-			my $new_doses = $doses_by_dates{$compdate}->{'ages'}->{$age} // die;
+		for my $age (sort{$a <=> $b} keys %pop_by_ages) {
+			my $new_doses = $doses_by_dates{$compdate}->{'ages'}->{$age} // 0;
 			if ($new_doses >= 0) {
 				$pop_by_ages{$age}->{'had_first_dose'} += $new_doses;
 				$pop_by_ages{$age}->{'had_no_dose'} -= $new_doses;
@@ -484,7 +480,7 @@ sub generate_population_by_age_group {
 
 sub print_report_by_age_groups {
 	open my $out, '>:utf8', 'data/2022_first_doses_no_dose_by_oia_age_groups_and_dates.csv';
-	say $out 'Date,Age Group,First Doses,No Dose';
+	say $out 'Date,Age Group,Ever Vaccinated,Never Vaccinated';
 	for my $oia_age_group (sort keys %doses_by_dates_and_age_groups) {
 		for my $compdate (sort{$a <=> $b} keys %{$doses_by_dates_and_age_groups{$oia_age_group}}) {
 			my $date = $doses_by_dates_and_age_groups{$oia_age_group}->{$compdate}->{'date'} // die;
